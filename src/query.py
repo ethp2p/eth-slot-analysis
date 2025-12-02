@@ -229,6 +229,32 @@ def get_block_content_info(db_url: str, slot_start: int, slot_end: int) -> pd.Da
     block_df = pd.read_sql(query_str, con=engine)
     return block_df
 
+def get_client_versions(db_url: str, slot_start: int, slot_end: int) -> pd.DataFrame:
+    # Define dates for queries
+    start_date_str = convert_slot_number_to_date_string(slot_start)
+    end_date_str = convert_slot_number_to_date_string(slot_end)
+    # Define and run query
+    query_str = f"""
+    SELECT 
+        meta_client_name AS node_name,
+        meta_client_geo_country AS node_country,
+        meta_client_version AS node_client_version,
+        meta_client_implementation AS node_client_implementation,
+        meta_client_id AS node_client_id,
+        remote_agent_implementation AS remote_agent_implementation,
+        remote_agent_version AS remote_agent_version,
+        remote_agent_version_major AS remote_agent_version_major,
+        remote_agent_version_minor AS remote_agent_version_minor,
+        remote_agent_version_patch AS remote_agent_version_patch,
+        event_date_time AS event_date_time
+    FROM default.libp2p_connected FINAL
+    WHERE event_date_time BETWEEN toDateTime('{start_date_str}') AND toDateTime('{end_date_str}')
+        AND meta_network_name = 'mainnet'
+    """
+    engine = create_engine(db_url)
+    client_versions_df = pd.read_sql(query_str, con=engine)
+    return client_versions_df
+
 
 def convert_slot_number_to_date_string(slot: int) -> str:
     slot_timestamp = slot * 12 + 1606824023
