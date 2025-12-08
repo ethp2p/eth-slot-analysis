@@ -142,6 +142,7 @@ def get_committee_attestations_for_slot(slot: int, db_url: str) -> pd.DataFrame:
             any(meta_client_geo_country) AS node_country,
             attesting_validator_index AS atts_validator,
             attesting_validator_committee_index AS atts_subnet,
+            peer_id_unique_key AS remote_peer_id,
             MIN(propagation_slot_start_diff) AS atts_arrival_time_ms
         FROM default.libp2p_gossipsub_beacon_attestation FINAL
         WHERE slot_start_date_time BETWEEN toDateTime('{start_date_str}') AND toDateTime('{end_date_str}')
@@ -161,7 +162,8 @@ def get_committee_attestations_for_slot(slot: int, db_url: str) -> pd.DataFrame:
         GROUP BY slot,
             meta_client_name,
             attesting_validator_index,
-            attesting_validator_committee_index
+            attesting_validator_committee_index,
+            peer_id_unique_key
     """
     engine = create_engine(db_url)
     atts_df = pd.read_sql(query_str, con=engine)
@@ -246,7 +248,8 @@ def get_client_versions(db_url: str, slot_start: int, slot_end: int) -> pd.DataF
         remote_agent_version_major AS remote_agent_version_major,
         remote_agent_version_minor AS remote_agent_version_minor,
         remote_agent_version_patch AS remote_agent_version_patch,
-        event_date_time AS event_date_time
+        event_date_time AS event_date_time,
+        remote_peer_id_unique_key AS remote_peer_id
     FROM default.libp2p_connected FINAL
     WHERE event_date_time BETWEEN toDateTime('{start_date_str}') AND toDateTime('{end_date_str}')
         AND meta_network_name = 'mainnet'
